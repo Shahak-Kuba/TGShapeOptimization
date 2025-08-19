@@ -1,6 +1,6 @@
 # Semi-implicit finite difference solver for governing PDE
 
-# TG PDE is given by: ∂ρ/∂t = D(∂²ρ/∂x²) + ρvκ + λρ 
+# TG PDE is given by: ∂ρ/∂t = D(∂²ρ/∂x²) + ρvκ + λρ, derived in Alias and Buenzli 2017 and Kuba et al. 2025,
 # where v = k_f ρ, D is diffusion, κ is curvature, λ is a population growth/decay term.
 
 using LinearAlgebra
@@ -84,7 +84,7 @@ function TG_PDE_Solver(T, D, kf, A, ρ₀, Tmax, growth_dir, myR)
     T₀  = zero(T)
     N   = 10000
     Δt  = (T(Tmax) - T₀) / T(N)
-    m   = 101
+    m   = size(myR,1) + 1
     Δθ  = T(2π) / T(m)
     θ   = collect(range(T(0), T(2π), length=m)); pop!(θ)
     M   = m - 1
