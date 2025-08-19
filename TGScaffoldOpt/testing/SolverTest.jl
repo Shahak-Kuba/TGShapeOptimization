@@ -1,4 +1,6 @@
-using .TGScaffoldOpt
+module SolverTest
+
+using TGScaffoldOpt
 using ForwardDiff
 
 myR = 100ones(100)
@@ -27,3 +29,6 @@ end
 
 @time ForwardDiff.gradient(r_to_output,myR)
 
+@test true # It ran...
+
+end
