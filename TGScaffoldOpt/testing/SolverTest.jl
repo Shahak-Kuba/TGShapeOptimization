@@ -5,29 +5,29 @@ using ForwardDiff
 
 myR = 100ones(100)
 T = eltype(myR)
-D = 1000;
-kf = 20.0;
-λ = 0.00;
-ρ₀ = 0.05;
+D = 1000
+kf = 20.0
+λ = 0.00
+ρ₀ = 0.05
 growth_dir = "inward"
 Tmax = 22
 
-@time θ,R,ρ = TGScaffoldOpt.TG_PDE_Solver(T,D,kf,λ,ρ₀,Tmax,growth_dir,myR);
+@time θ, R, ρ = TGScaffoldOpt.TG_PDE_Solver(T, D, kf, λ, ρ₀, Tmax, growth_dir, myR)
 
 function r_to_output(myR)
-    T = eltype(myR)
-    D = 1000;
-    kf = 20.0;
-    A = 0.00;
-    ρ₀ = 0.05;
-    growth_dir = "inward"
-    Tmax = 22
+  T = eltype(myR)
+  D = 1000
+  kf = 20.0
+  A = 0.00
+  ρ₀ = 0.05
+  growth_dir = "inward"
+  Tmax = 22
 
-    θ,R,ρ = TGScaffoldOpt.TG_PDE_Solver(T,D,kf,A,ρ₀,Tmax,growth_dir,myR);
-    ρ[end]
+  θ, R, ρ = TGScaffoldOpt.TG_PDE_Solver(T, D, kf, A, ρ₀, Tmax, growth_dir, myR)
+  ρ[end]
 end
 
-@time ForwardDiff.gradient(r_to_output,myR)
+@time ForwardDiff.gradient(r_to_output, myR)
 
 @test true # It ran...
 

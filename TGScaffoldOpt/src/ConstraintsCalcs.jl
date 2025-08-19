@@ -11,18 +11,18 @@ Each column of the output matrix represents a position vector [x; y].
 # Returns
 A matrix where each column is a 2D position vector [x; y].
 """
-function polar_to_cartesian(R::Vector{T}, θ::Vector{T}) where T
-    n = length(R)
-    coords = zeros(T,2,n)
-    for i in 1:n
-        coords[1, i] = R[i] * cos(θ[i])
-        coords[2, i] = R[i] * sin(θ[i])
-    end
-    return coords
+function polar_to_cartesian(R::Vector{T1}, θ::Vector{T2}) where {T1, T2}
+  n = length(R)
+  coords = zeros(promote_type(T1, T2), 2, n)
+  for i in 1:n
+    coords[1, i] = R[i] * cos(θ[i])
+    coords[2, i] = R[i] * sin(θ[i])
+  end
+  return coords
 end
 
 """
-    Ω(p)
+    Vol(p)
 
 Calculate the area of a polygon defined by points in `p`.
 
@@ -34,21 +34,21 @@ This function computes the area using the shoelace formula. The polygon is defin
 # Returns
 The absolute area of the polygon.
 """
-function Ω(p)
-    A = 0
-    for ii in axes(p,2)
-        if ii == size(p,2)
-            A += (p[1,ii]*p[2,1] -  p[2,ii]*p[1,1])
-        else
-            A += (p[1,ii]*p[2,ii+1] -  p[2,ii]*p[1,ii+1])
-        end
+function Vol(p)
+  A = 0
+  for ii in axes(p, 2)
+    if ii == size(p, 2)
+      A += (p[1, ii] * p[2, 1] - p[2, ii] * p[1, 1])
+    else
+      A += (p[1, ii] * p[2, ii+1] - p[2, ii] * p[1, ii+1])
     end
-    return abs(A)/2;
+  end
+  return abs(A) / 2
 end
 
 
 """
-    P(p)
+    Per(p)
 
 Calculate the perimeter of a polygon defined by points in `p`.
 
@@ -58,12 +58,12 @@ Calculate the perimeter of a polygon defined by points in `p`.
 # Returns
 The perimeter (sum of edge lengths) of the polygon.
 """
-function P(p)
-    n = size(p, 2)
-    perim = 0.0
-    for i in 1:n
-        j = i == n ? 1 : i + 1
-        perim += norm(p[:, i] - p[:, j])
-    end
-    return perim
+function Per(p)
+  n = size(p, 2)
+  perim = 0.0
+  for i in 1:n
+    j = i == n ? 1 : i + 1
+    perim += norm(p[:, i] - p[:, j],2)
+  end
+  return perim
 end
