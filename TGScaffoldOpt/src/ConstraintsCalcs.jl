@@ -11,9 +11,9 @@ Each column of the output matrix represents a position vector [x; y].
 # Returns
 A matrix where each column is a 2D position vector [x; y].
 """
-function polar_to_cartesian(R, θ)
+function polar_to_cartesian(R::Vector{T}, θ::Vector{T}) where T
     n = length(R)
-    coords = zeros(2, n)
+    coords = zeros(T,2,n)
     for i in 1:n
         coords[1, i] = R[i] * cos(θ[i])
         coords[2, i] = R[i] * sin(θ[i])
