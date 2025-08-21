@@ -3,7 +3,6 @@
 # TG PDE is given by: ∂ρ/∂t = D(∂²ρ/∂x²) + ρvκ + λρ, derived in Alias and Buenzli 2017 and Kuba et al. 2025,
 # where v = k_f ρ, D is diffusion, κ is curvature, λ is a population growth/decay term.
 
-using LinearAlgebra
 # In-place upwind selector (Dual-safe)
 function aₘ!(a⁺::AbstractVector{T}, a⁻::AbstractVector{T},
   Rᵢ₊₁::AbstractVector{T}, Rᵢ₋₁::AbstractVector{T}) where {T}

@@ -4,9 +4,12 @@ using ForwardDiff
 using CairoMakie
 
 include("PDE_Solver.jl")
-include("ConstraintsCalcs.jl")
-include("Visualisation.jl")
-
 export TG_PDE_Solver
 
-end # module TGScaffoldOpt
+include("ConstraintsCalcs.jl")
+export Vol, Per
+
+include("Utils.jl")
+export initial_structure, plot_iteration_TG_sol
+
+end

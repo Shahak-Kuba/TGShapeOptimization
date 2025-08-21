@@ -1,7 +1,6 @@
 using TGScaffoldOpt
 using ForwardDiff
 using BenchmarkTools
-using TGScaffoldOpt: polar_to_cartesian, Vol, Per
 
 n = 300
 # Params
