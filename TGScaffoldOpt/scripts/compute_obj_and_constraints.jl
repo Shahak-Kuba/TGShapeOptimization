@@ -3,7 +3,7 @@ using ForwardDiff
 using BenchmarkTools
 using TGScaffoldOpt: polar_to_cartesian, Vol, Per
 
-n = 100
+n = 300
 # Params
 D = 1000;
 kf = 20.0;
@@ -12,10 +12,10 @@ kf = 20.0;
 growth_dir = "inward";
 Tmax = 22;
 # Initial Radius
-myR = 100ones(n);
-# Initial Theta
+#myR = 100ones(n);
 θ0 = collect(range(0, 2π, length=n+1))
 pop!(θ0)
+myR = r_for_InitialBoundary("square",100,θ0,n);
 
 function r_to_output(myR)
   D = 1000
