@@ -2,10 +2,11 @@ using TGScaffoldOpt
 using ForwardDiff
 using BenchmarkTools
 
-n = 10
+n = 50
 # Params
-D = 1000;
-kf = 20.0;
+D = 30;
+akf = 0.5
+bkf = 0.1
 λ = 0.00;
 ρ₀ = 0.05;
 growth_dir = "inward";
@@ -17,15 +18,7 @@ pop!(θ0)
 myR = initial_structure("square",100,θ0,n);
 
 function r_to_output(myR)
-  D = 1000
-  akf = 0.5
-  bkf = 0.1
-  A = 0.00
-  ρ₀ = 0.05
-  growth_dir = "inward"
-  Tmax = 22
-
-  θ, R, ρ = TGScaffoldOpt.TG_PDE_Solver(D, akf, bkf, A, ρ₀, Tmax, growth_dir, myR)
+  θ, R, ρ = TGScaffoldOpt.TG_PDE_Solver(D, akf, bkf, λ, ρ₀, Tmax, growth_dir, myR)
   j = mean(R[end])
 end
 
@@ -53,7 +46,6 @@ dC2 = ForwardDiff.gradient(r_to_p_to_Per, myR)
 # dPer = dC[2, :]
 
 using NLopt
-
 
 function J(x::Vector, grad::Vector)
   if length(grad) > 0
