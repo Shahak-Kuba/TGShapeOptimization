@@ -20,6 +20,11 @@ myR = r_for_InitialBoundary("square",100,θ0,n);
 
 @time θ, R, ρ = TGScaffoldOpt.TG_PDE_Solver(D, kf, λ, ρ₀, Tmax, growth_dir, myR)
 
-f = PlotIterationTGSol(R,θ,ρ,[1, 2001, 4001, 6001, 8001, 10001])
+akf = 0.5#3.2741*1e-6
+bkf = 0.1#8.5728*1e-5
+
+@time θ, R, ρ = TGScaffoldOpt.TG_PDE_Solver(D, akf, bkf, λ, ρ₀, Tmax, growth_dir, myR)
+
+f = TGScaffoldOpt.plot_iteration_TG_sol(R,θ,ρ,[1, 2001, 4001, 6001, 8001, 10001])
 
 

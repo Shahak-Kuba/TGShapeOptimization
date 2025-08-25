@@ -213,3 +213,137 @@ function TG_PDE_Solver(D, kf, A, ρ₀, Tmax, growth_dir, myR::Vector{T}) where 
 
   return θ, R, ρ
 end
+
+
+function TG_PDE_Solver(D, akf, bkf, A, ρ₀, Tmax, growth_dir, myR::Vector{T}) where {T}
+  # grid (keep scalars in T)
+  T₀ = zero(T)
+  N = 10000
+  Δt = (T(Tmax) - T₀) / T(N)
+  m = size(myR, 1) + 1
+  Δθ = T(2π) / T(m)
+  θ = collect(range(T(0), T(2π), length=m))
+  pop!(θ)
+  M = m - 1
+  invΔθ = oneunit(T) / Δθ
+  invΔθ2 = invΔθ * invΔθ
+
+  # state arrays
+  # Note, these could be cached - doubt we really need it here
+  R = zeros(T, N + 1, M)
+  Rθ = zeros(T, N + 1, M)
+  Rθθ = zeros(T, N + 1, M)
+  ρ = zeros(T, N + 1, M)
+  ρθ = zeros(T, N + 1, M)
+  κ = zeros(T, N + 1, M)
+  Φ = zeros(T, N + 1, M)
+  λ = zeros(T, N + 1, M)
+  ψ = zeros(T, N + 1, M)
+  kf = zeros(T, N + 1, M)
+
+  # initial conditions
+  @views copyto!(R[1, :], myR)
+  @views ρ[1, :] .= ρ₀
+
+  S = growth_dir == "inward" ? oneunit(T) : -oneunit(T)
+
+  # scratch (reused)
+  a⁺ = Vector{T}(undef, M)
+  a⁻ = Vector{T}(undef, M)
+  Rᵢ = Vector{T}(undef, M)
+  ρᵢ = Vector{T}(undef, M)
+  Rᵢ₊₁ = Vector{T}(undef, M)
+  Rᵢ₋₁ = Vector{T}(undef, M)
+  ρᵢ₊₁ = Vector{T}(undef, M)
+  ρᵢ₋₁ = Vector{T}(undef, M)
+
+  # tridiagonal bands & work
+  d₀ = Vector{T}(undef, M)
+  d₁ = Vector{T}(undef, M - 1)
+  d₋₁ = Vector{T}(undef, M - 1)
+  cwrk = Vector{T}(undef, M)
+  dwrk = Vector{T}(undef, M)
+  z1 = Vector{T}(undef, M)
+  zN = Vector{T}(undef, M)
+  ybuf = Vector{T}(undef, M)
+  xsol = Vector{T}(undef, M)
+
+  @views @inbounds for n in 1:N
+    Rn = R[n, :]
+    Rnp1 = R[n+1, :]
+    ρn = ρ[n, :]
+    ρnp1 = ρ[n+1, :]
+    Rθn = Rθ[n, :]
+    Rθθn = Rθθ[n, :]
+    ρθn = ρθ[n, :]
+    κn = κ[n, :]
+    Φn = Φ[n, :]
+    λn = λ[n, :]
+    ψn = ψ[n, :]
+    kfn = kf[n, :]
+
+    copyto!(Rᵢ, Rn)
+    copyto!(ρᵢ, ρn)
+
+    # neighbors (no circshift allocs)
+    @inbounds for i in 1:M
+      ip = (i == M) ? 1 : i + 1
+      im = (i == 1) ? M : i - 1
+      Rᵢ₊₁[i] = Rᵢ[ip]
+      Rᵢ₋₁[i] = Rᵢ[im]
+      ρᵢ₊₁[i] = ρᵢ[ip]
+      ρᵢ₋₁[i] = ρᵢ[im]
+    end
+
+    # upwind flags
+    aₘ!(a⁺, a⁻, Rᵢ₊₁, Rᵢ₋₁)
+
+    # derivatives + geometry + coefficients (fused)
+    @inbounds for i in 1:M
+      Rθi = (Rᵢ[i] * (a⁺[i] - a⁻[i]) - Rᵢ₋₁[i] * a⁺[i] + Rᵢ₊₁[i] * a⁻[i]) * invΔθ
+      Rθθi = (Rᵢ₊₁[i] - (T(2) * Rᵢ[i]) + Rᵢ₋₁[i]) * invΔθ2
+      ρθi = (ρᵢ[i] * (a⁺[i] - a⁻[i]) - ρᵢ₋₁[i] * a⁺[i] + ρᵢ₊₁[i] * a⁻[i]) * invΔθ
+
+      Rθn[i] = Rθi
+      Rθθn[i] = Rθθi
+      ρθn[i] = ρθi
+
+      R2 = Rᵢ[i] * Rᵢ[i]
+      Rθ2 = Rθi * Rθi
+      denom = (R2 + Rθ2)^(T(1.5))
+      κn[i] = -(R2 + T(2) * Rθ2 - Rᵢ[i] * Rθθi) / denom
+
+      kfn[i] = (κn[i] <= T(0)) ? T(akf * Rᵢ[i] + bkf) : T(0)
+
+      hypotR = sqrt(R2 + Rθ2)
+      Φn[i] = ρᵢ[i] - S * Δt * κn[i] * kfn[i] * (ρᵢ[i] * ρᵢ[i]) -
+              (S * Δt * kfn[i] * ρᵢ[i] * Rθi * ρθi) / (Rᵢ[i] * hypotR) - A * Δt * ρᵢ[i]
+
+      denomλ = R2 + Rθ2
+      λn[i] = (D * Δt * invΔθ2) / denomλ
+      ψn[i] = (D * Δt * Rθi * (Rᵢ[i] + Rθθi)) / (Δθ * (denomλ * denomλ))
+    end
+
+    # explicit update for R
+    @inbounds @simd for i in 1:M
+      Rnp1[i] = Rᵢ[i] - (S * Δt * kfn[i] * ρᵢ[i] / Rᵢ[i]) * sqrt(Rᵢ[i] * Rᵢ[i] + Rθn[i] * Rθn[i])
+    end
+
+    # build tridiagonal bands
+    @inbounds for i in 1:M
+      d₀[i] = oneunit(T) + T(2) * λn[i] + ψn[i] * (a⁺[i] - a⁻[i])
+      if i < M
+        d₁[i] = -λn[i] + ψn[i] * a⁻[i]
+        d₋₁[i] = -λn[i+1] - ψn[i+1] * a⁺[i+1]
+      end
+    end
+    α = -λn[1] - ψn[1] * a⁺[1]     # A[1,M]
+    β = -λn[M] + ψn[M] * a⁻[M]     # A[M,1]
+
+    # ----- cyclic tridiagonal solve  -----
+    cyclic_tridiag_solve!(xsol, d₋₁, d₀, d₁, α, β, Φn, cwrk, dwrk, z1, zN, ybuf)
+    copyto!(ρnp1, xsol)
+  end
+
+  return θ, R, ρ
+end

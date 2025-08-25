@@ -41,10 +41,9 @@ end
 
 ## Visualisation
 function plot_iteration_TG_sol(R, θ, ρ, sol_indecies;
-    size = (600,600),xlabel="X", ylabel="Y",
-    color=ρₙ, colormap=:viridis, linewidth=3, colorrange=[0, 0.08])
-  fig = Figure(size)
-  ax = Axis(fig[1, 1], xlabel, ylabel)
+      cmap=:viridis, lw=3, ClrRange=[0, 0.08])
+  fig = Figure(size = (600,600))
+  ax = Axis(fig[1, 1], xlabel="X", ylabel="Y")
 
   for idx in sol_indecies
     Rₙ = [R[idx, :]; R[idx, 1]]  # Close the loop by repeating the first point
@@ -52,7 +51,7 @@ function plot_iteration_TG_sol(R, θ, ρ, sol_indecies;
     #Rₙ = R[idx, :]
     #ρₙ = ρ[idx, :]
     coords = polar_to_cartesian(Rₙ, [θ; 2π])
-    lines!(ax, coords[1, :], coords[2, :], color, colormap, linewidth, colorrange)
+    lines!(ax, coords[1, :], coords[2, :], ρₙ, colormap = cmap, linewidth = lw, colorrange = ClrRange)
   end
 
   return fig
