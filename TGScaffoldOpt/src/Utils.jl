@@ -1,6 +1,6 @@
 ## Initial structure
 function initial_structure(type, r₀, θ, M)
-  T = promote_type(r₀, θ)
+  T = eltype(θ)
   r = zeros(T, M)
 
   if type == "circle"
